@@ -1,0 +1,52 @@
+<div class="modal fade" id="settingsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary">
+                <h5 class="modal-title"><i class="bi bi-gear me-2"></i>Настройки</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-section">
+                    <label><i class="bi bi-cloud me-1"></i>Яндекс.Диск</label>
+                    <div class="mb-2">
+                        <label class="small text-muted">Токен доступа</label>
+                        <input type="password" class="form-control form-control-sm" id="yandexToken" placeholder="OAuth token">
+                    </div>
+                    <div class="mb-2">
+                        <label class="small text-muted">Refresh Token</label>
+                        <input type="password" class="form-control form-control-sm" id="yandexRefreshToken" placeholder="Refresh token">
+                    </div>
+                    <button class="btn btn-primary btn-sm w-100 mt-1" onclick="saveYandexSettings()"><i class="bi bi-check-lg me-1"></i>Сохранить</button>
+                </div>
+                <hr>
+                <div class="settings-section">
+                    <label><i class="bi bi-shop me-1"></i>Склад по умолчанию</label>
+                    <div class="mb-2">
+                        <select class="form-select form-select-sm" id="defaultWarehouseSelect"><option value="">Не выбран</option></select>
+                    </div>
+                </div>
+                <hr>
+                <div class="settings-section">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <label class="mb-0"><i class="bi bi-palette me-1"></i>Тема оформления</label>
+                            <div class="form-text small text-muted mt-0" id="themeLabel">Светлая</div>
+                        </div>
+                        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" role="switch" aria-checked="false"></button>
+                    </div>
+                </div>
+                <hr>
+                <div class="settings-section d-none" id="installAppSection">
+                    <label class="mb-2"><i class="bi bi-download me-1"></i>Установить приложение</label>
+                    <p class="small text-muted mb-2">Добавьте Mr.Check на главный экран для быстрого доступа</p>
+                    <button class="btn btn-primary w-100" id="installAppBtn" onclick="installApp()">
+                        <i class="bi bi-phone me-1"></i>Установить приложение
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>

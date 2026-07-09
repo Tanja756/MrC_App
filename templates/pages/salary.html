@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="filter-bar">
+    <div class="filter-header d-md-none" onclick="toggleFilter(this)"><i class="bi bi-calendar3"></i> Выбор месяца</div>
+    <div class="filter-body">
+    <div class="row g-2 align-items-center justify-content-center">
+        <div class="col-auto"><button class="btn btn-outline-secondary btn-sm" onclick="changeMonth(-1)"><i class="bi bi-chevron-left"></i></button></div>
+        <div class="col-auto text-center"><span class="fw-semibold salary-month" id="salaryMonth"></span></div>
+        <div class="col-auto"><button class="btn btn-outline-secondary btn-sm" onclick="changeMonth(1)"><i class="bi bi-chevron-right"></i></button></div>
+    </div>
+    </div>
+</div>
+<div id="salaryList"></div>
+{% endblock %}
+{% block scripts %}
+<link href="{{ url_for('static', filename='css/warehouse.css') }}?v=2" rel="stylesheet">
+<script src="{{ url_for('static', filename='js/warehouse.js') }}?v=2"></script>
+<script>document.addEventListener('DOMContentLoaded',()=>{loadSalary();});</script>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="filter-bar">
+    <div class="filter-header d-md-none" onclick="toggleFilter(this)"><i class="bi bi-funnel"></i> Фильтры склада
+        <button class="btn btn-sm btn-outline-secondary border-0 ms-1" onclick="event.stopPropagation();refreshBalances()" title="Обновить"><i class="bi bi-arrow-clockwise"></i></button>
+    </div>
+    <div class="filter-body">
+        <div class="row g-2">
+            <div class="col-md-3"><select class="form-select" id="storageSelect" onchange="loadBalances()"><option value="">Выберите склад...</option></select></div>
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" class="form-control" id="balanceSearch" placeholder="Поиск..." oninput="filterBalances()">
+                    <button class="btn btn-outline-secondary btn-reset-filter" onclick="document.getElementById('balanceSearch').value='';filterBalances()"><i class="bi bi-x-lg"></i></button>
+                </div>
+            </div>
+            <div class="col-md-5">
+                <div class="d-flex gap-1 flex-wrap">
+                    <div class="btn-group flex-grow-1">
+                        <button class="btn btn-outline-secondary" onclick="filterBalanceType('all')" id="bf-all">Все</button>
+                        <button class="btn btn-outline-secondary" onclick="filterBalanceType('equipment')" id="bf-equipment">Оборудование</button>
+                        <button class="btn btn-outline-secondary" onclick="filterBalanceType('zip')" id="bf-zip">ЗИП</button>
+                        <button class="btn btn-outline-secondary" onclick="filterBalanceType('repair')" id="bf-repair">Ремонт</button>
+                    </div>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="updateArrivalFromTransfers()" title="Обновить даты поступления из перемещений"><i class="bi bi-calendar-check"></i></button>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="exportWarehousePdf()" title="Экспорт PDF"><i class="bi bi-filetype-pdf"></i></button>
+                    <button class="btn btn-outline-secondary" onclick="refreshBalances()" title="Обновить"><i class="bi bi-arrow-clockwise"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="balancesList"></div>
+{% endblock %}
+{% block scripts %}
+<link href="{{ url_for('static', filename='css/warehouse.css') }}?v=2" rel="stylesheet">
+<script src="{{ url_for('static', filename='js/warehouse.js') }}?v=7"></script>
+<script>document.addEventListener('DOMContentLoaded',()=>{loadStorages();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&isWorkingHours()){loadBalances();}});const sel=document.getElementById('storageSelect');const saved=lsGet('defaultWarehouse','');if(saved&&sel&&sel.options.length>1){if([...sel.options].some(o=>o.value===saved))sel.value=saved;loadBalances();}});</script>
+{% endblock %}
