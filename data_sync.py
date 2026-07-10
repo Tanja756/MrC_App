@@ -1,6 +1,5 @@
 import json
 import logging
-import hashlib
 from config import load_config
 from yadisk_client import YandexDiskClient
 from db import (
@@ -21,10 +20,7 @@ SYNC_FILES = {
     'ppr_list': 'ppr_list.json',
 }
 
-
-def compute_hash(data):
-    raw = json.dumps(data, ensure_ascii=False, default=str, sort_keys=True)
-    return hashlib.sha256(raw.encode('utf-8')).hexdigest()
+HASH_MANIFEST = 'hashes.json'
 
 
 def sync_from_yandex(client=None, username=None):
@@ -40,27 +36,36 @@ def sync_from_yandex(client=None, username=None):
         client = YandexDiskClient()
 
     print(f"[SYNC] sync_from_yandex: username={username}, files={list(SYNC_FILES.keys())}")
+
+    remote_path_prefix = f"{username}/"
+    manifest = client.download_json(f"{remote_path_prefix}{HASH_MANIFEST}")
+    if manifest is None or not isinstance(manifest, dict):
+        print(f"[SYNC] hashes.json not found, downloading all files")
+        manifest = {}
+
     results = {}
     for key, filename in SYNC_FILES.items():
-        remote_path = f"{username}/{filename}"
-        print(f"[SYNC] downloading {key} from {remote_path}...")
-        data = client.download_json(remote_path)
+        manifest_hash = manifest.get(filename)
+
+        if manifest_hash is not None:
+            prev_hash = get_sync_state(f"hash_{key}")
+            if prev_hash == manifest_hash:
+                print(f"[SYNC] {key}: unchanged (hash match)")
+                results[key] = {'status': 'unchanged'}
+                continue
+
+        print(f"[SYNC] downloading {key} from {remote_path_prefix}{filename}...")
+        data = client.download_json(f"{remote_path_prefix}{filename}")
         if data is None:
             print(f"[SYNC] {key}: not found on Yandex Disk")
             results[key] = {'status': 'not_found'}
             continue
 
-        file_hash = compute_hash(data)
-        prev_hash = get_sync_state(f"hash_{key}")
-        if prev_hash == file_hash:
-            print(f"[SYNC] {key}: unchanged (hash match)")
-            results[key] = {'status': 'unchanged'}
-            continue
-
         print(f"[SYNC] {key}: new data ({len(str(data))} bytes), importing...")
         try:
             _import_data(key, data)
-            set_sync_state(f"hash_{key}", file_hash)
+            if manifest_hash is not None:
+                set_sync_state(f"hash_{key}", manifest_hash)
             results[key] = {'status': 'imported'}
             logger.info(f"Imported {key} ({len(str(data))} bytes)")
             print(f"[SYNC] {key}: imported OK")
