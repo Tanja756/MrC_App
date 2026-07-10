@@ -193,11 +193,19 @@ def api_generate_fn():
     return _send_file(result)
 
 
-@tasks_bp.route('/documents/m15', methods=['POST'])
-def api_generate_m15():
-    from docgen import generate_m15
+@tasks_bp.route('/documents/m15-in', methods=['POST'])
+def api_generate_m15_in():
+    from docgen import generate_m15_in
     data = request.json or {}
-    result = generate_m15(data)
+    result = generate_m15_in(data)
+    return _send_file(result)
+
+
+@tasks_bp.route('/documents/m15-out', methods=['POST'])
+def api_generate_m15_out():
+    from docgen import generate_m15_out
+    data = request.json or {}
+    result = generate_m15_out(data)
     return _send_file(result)
 
 

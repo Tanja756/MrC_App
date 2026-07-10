@@ -1,6 +1,7 @@
 import os
 import re
 import zipfile
+import subprocess
 import shutil
 import tempfile
 import logging
@@ -91,7 +92,8 @@ def _make_replacements(task_data, profile_name='', extra=None):
     sap = task_data.get('sap', '')
     r['{SHOP}'] = shop
     r['{SAP}'] = sap
-    r['{ADDR}'] = task_data.get('address', '')
+    addr_text = task_data.get('addr') or task_data.get('address', '')
+    r['{ADDR}'] = f"{shop}, {addr_text}" if shop and addr_text else shop or addr_text
     r['{NUM}'] = shop
     if shop:
         ps = shop.rjust(5)
@@ -107,6 +109,14 @@ def _make_replacements(task_data, profile_name='', extra=None):
         for k, v in extra.items():
             if k != 'items':
                 r[f'{{{k.upper()}}}'] = str(v)
+    addr_text = task_data.get('addr') or task_data.get('address', '')
+    r['{ADDR}'] = f"{shop}, {addr_text}" if shop and addr_text else shop or addr_text
+    if shop and sap and addr_text:
+        try:
+            from db import add_shop
+            add_shop(shop, sap, addr_text)
+        except Exception:
+            pass
     return r
 
 
@@ -134,7 +144,7 @@ def _fill_item_rows(replacements, items, max_rows=10):
 
 def generate_act(data):
     task = data.get('task', {})
-    profile_name = data.get('profileName', '')
+    profile_name = data.get('profileName') or data.get('profile_name', '')
     extra = data.get('fields', {})
     task_data = _extract_data_from_text(task, profile_name)
     task_data.update(extra)
@@ -155,7 +165,7 @@ def generate_act(data):
 
 def generate_fn(data):
     task = data.get('task', {})
-    profile_name = data.get('profileName', '')
+    profile_name = data.get('profileName') or data.get('profile_name', '')
     extra = data.get('fields', {})
     task_data = _extract_data_from_text(task, profile_name)
     task_data.update(extra)
@@ -166,22 +176,30 @@ def generate_fn(data):
     return _read_result(result_path, _doc_filename('FN', task_data))
 
 
-def generate_m15(data):
+def _build_m15_replacements(data):
     task = data.get('task', {})
-    profile_name = data.get('profileName', '')
-    is_reverse = data.get('reverse', False)
+    profile_name = data.get('profileName') or data.get('profile_name', '')
     extra = data.get('fields', {})
     task_data = _extract_data_from_text(task, profile_name)
     task_data.update(extra)
     replacements = _make_replacements(task_data, profile_name, extra)
-
     items = extra.get('items', [])
     _fill_item_rows(replacements, items, 10)
+    return task_data, replacements
 
-    template_name = 'M15_Обратная.ods' if is_reverse else 'M15_Прямая.ods'
-    template_path = _get_template(template_name)
+
+def generate_m15_in(data):
+    task_data, replacements = _build_m15_replacements(data)
+    template_path = _get_template('M15_Прямая.ods')
     result_path = _replace_in_ods(template_path, replacements)
-    return _read_result(result_path, _doc_filename('M15', task_data))
+    return _read_result(result_path, _doc_filename('M15-IN', task_data))
+
+
+def generate_m15_out(data):
+    task_data, replacements = _build_m15_replacements(data)
+    template_path = _get_template('M15_Обратная.ods')
+    result_path = _replace_in_ods(template_path, replacements)
+    return _read_result(result_path, _doc_filename('M15-OUT', task_data))
 
 
 def generate_documents(data):
@@ -207,17 +225,75 @@ def _extract_data_from_text(task, profile_name=''):
     data = {}
     m = re.search(r'(\d+)-Пятерочка', text)
     data['shop'] = m.group(1) if m else ''
-    m = re.search(r'SAP[:\s]*(\S+)', text)
-    data['sap'] = m.group(1) if m else ''
-    m = re.search(r'Адрес[:\s]*([^\n]+)', text)
-    data['address'] = m.group(1).strip() if m else ''
+    m = re.search(r'SAP-(\w+)', text)
+    if not m:
+        m = re.search(r'SAP[:\s]*(\S+)', text)
+    data['sap'] = m.group(1).upper() if m else ''
     m = re.search(r'(\d{6,7})', task.get('number', ''))
     data['number'] = m.group(1) if m else task.get('number', '')
     data['code'] = task.get('guid', '')[:8] if task else ''
+
+    addr = ''
+    m = re.search(r'Адрес[:\s]*([^\n]+)', text)
+    if m:
+        addr = m.group(1).strip()
+    if not addr and data.get('sap'):
+        m = re.search(r'SAP-\w+[ \t]+([^\n]*?)(?:\s*\||$)', text)
+        if m:
+            addr = re.sub(r'\s*(Контрагент:|Срок:).*$', '', m.group(1).strip()).strip()
+    if not addr and data.get('sap'):
+        m = re.search(r'SAP[:\s]+([^\n]*?)(?:\s*\||$)', text)
+        if m:
+            addr = re.sub(r'\s*(Контрагент:|Срок:).*$', '', m.group(1).strip()).strip()
+
+    if data.get('sap'):
+        try:
+            from db import find_shop_by_sap
+            row = find_shop_by_sap(data['sap'])
+            if row and row['address']:
+                addr = row['address']
+        except Exception:
+            pass
+
+    data['addr'] = addr
+    data['address'] = addr
     return data
 
 
+def _ods_to_xls(ods_path):
+    xls_path = ods_path.replace('.ods', '.xls')
+    try:
+        subprocess.run(
+            ['libreoffice', '--headless', '--convert-to', 'xls', '--outdir',
+             os.path.dirname(xls_path), ods_path],
+            capture_output=True, timeout=30, check=True
+        )
+        if os.path.exists(xls_path):
+            os.unlink(ods_path)
+            return xls_path
+    except Exception as e:
+        print(f"[docgen] ODS→XLS conversion failed: {e}")
+    return ods_path
+
+
+def _check_export_xls():
+    try:
+        from config import load_config
+        cfg = load_config()
+        return cfg.get('App', 'export_xls', fallback='false') == 'true'
+    except Exception:
+        return False
+
+
 def _read_result(filepath, filename):
+    if _check_export_xls():
+        filepath = _ods_to_xls(filepath)
+        filename = filename.replace('.ods', '.xls')
+        return {
+            'path': filepath,
+            'filename': filename,
+            'mime': 'application/vnd.ms-excel',
+        }
     return {
         'path': filepath,
         'filename': filename,

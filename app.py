@@ -41,16 +41,20 @@ def create_app():
 
     @app.route('/api/sync/from-yandex', methods=['POST'])
     def api_sync_from_yandex():
+        print(f"[API] sync_from_yandex: starting...")
         from data_sync import sync_from_yandex
         client = YandexDiskClient()
         result = sync_from_yandex(client)
+        print(f"[API] sync_from_yandex: done, result={result}")
         return jsonify(result)
 
     @app.route('/api/sync/to-yandex', methods=['POST'])
     def api_sync_to_yandex():
+        print(f"[API] sync_to_yandex: starting...")
         from action_manager import upload_all_actions
         client = YandexDiskClient()
         count = upload_all_actions(client)
+        print(f"[API] sync_to_yandex: done, uploaded={count}")
         return jsonify({'uploaded': count})
 
     @app.route('/api/sync/status')

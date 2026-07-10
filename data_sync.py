@@ -33,34 +33,43 @@ def sync_from_yandex(client=None, username=None):
         username = cfg.get('OneC', 'login', fallback='')
     if not username:
         logger.error("1C login not configured")
+        print(f"[SYNC] 1C login not configured")
         return {'error': '1C login not configured'}
 
     if not client:
         client = YandexDiskClient()
 
+    print(f"[SYNC] sync_from_yandex: username={username}, files={list(SYNC_FILES.keys())}")
     results = {}
     for key, filename in SYNC_FILES.items():
         remote_path = f"{username}/{filename}"
+        print(f"[SYNC] downloading {key} from {remote_path}...")
         data = client.download_json(remote_path)
         if data is None:
+            print(f"[SYNC] {key}: not found on Yandex Disk")
             results[key] = {'status': 'not_found'}
             continue
 
         file_hash = compute_hash(data)
         prev_hash = get_sync_state(f"hash_{key}")
         if prev_hash == file_hash:
+            print(f"[SYNC] {key}: unchanged (hash match)")
             results[key] = {'status': 'unchanged'}
             continue
 
+        print(f"[SYNC] {key}: new data ({len(str(data))} bytes), importing...")
         try:
             _import_data(key, data)
             set_sync_state(f"hash_{key}", file_hash)
             results[key] = {'status': 'imported'}
             logger.info(f"Imported {key} ({len(str(data))} bytes)")
+            print(f"[SYNC] {key}: imported OK")
         except Exception as e:
             results[key] = {'status': 'error', 'error': str(e)}
             logger.error(f"Failed to import {key}: {e}")
+            print(f"[SYNC] {key}: import error: {e}")
 
+    print(f"[SYNC] sync_from_yandex: done, results={results}")
     return results
 
 

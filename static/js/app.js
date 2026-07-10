@@ -42,6 +42,10 @@ function openSettings() {
     fetch('/api/settings').then(checkAuth).then(r => r.json()).then(data => {
         document.getElementById('yandexToken').value = data.Yandex_token || '';
         document.getElementById('yandexRefreshToken').value = data.Yandex_refresh_token || '';
+        document.getElementById('profileNameInput').value = data.App_profile_name || '';
+        savedProfileName = data.App_profile_name || '';
+        lsSet('profileName', savedProfileName);
+        document.getElementById('exportXlsCheck').checked = data.App_export_xls === 'true';
         const sel = document.getElementById('defaultWarehouseSelect');
         if (sel) {
             const saved = data.App_default_warehouse || '';
@@ -60,10 +64,14 @@ function openSettings() {
 function saveYandexSettings() {
     const sel = document.getElementById('defaultWarehouseSelect');
     const defaultWarehouse = sel ? sel.value : '';
+    const profileName = document.getElementById('profileNameInput').value.trim();
+    const exportXls = document.getElementById('exportXlsCheck').checked;
     const body = {
         Yandex_token: document.getElementById('yandexToken').value.trim(),
         Yandex_refresh_token: document.getElementById('yandexRefreshToken').value.trim(),
         App_default_warehouse: defaultWarehouse,
+        App_profile_name: profileName,
+        App_export_xls: exportXls ? 'true' : 'false',
     };
     if (defaultWarehouse) {
         lsSet('defaultWarehouse', defaultWarehouse);
@@ -75,6 +83,10 @@ function saveYandexSettings() {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(body),
     }).then(checkAuth).then(r => r.json()).then(data => {
+        savedProfileName = profileName;
+        lsSet('profileName', savedProfileName);
+        const modal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
+        if (modal) modal.hide();
         showAlert('\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u044B', 'success');
     }).catch(() => showAlert('\u041E\u0448\u0438\u0431\u043A\u0430 \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0438\u044F', 'danger'));
 }

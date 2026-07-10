@@ -1162,7 +1162,6 @@ function openDocForm(guid) {
         let desc = rx(/Подробное\s*описание:\s*\n?(.*?)(?:\n\n|\*{3}|$)/s);
         if (!desc) desc = (task.description || '').replace(/Объект обслуживания:.*?(?:\n|$)/g, '').replace(/Адрес:.*?(?:\n|$)/g, '').trim();
         document.getElementById('docDesc').value = desc;
-
         document.getElementById('docIncludeAct').checked = true;
         document.getElementById('docIncludeFn').checked = false;
         document.getElementById('docIncludeM15').checked = false;
@@ -1231,7 +1230,10 @@ function generateDocForm() {
     const endpoints = [];
     if (includeAct) endpoints.push('/api/tasks/documents/act');
     if (includeFn) endpoints.push('/api/tasks/documents/fn');
-    if (includeM15) endpoints.push('/api/tasks/documents/m15');
+    if (includeM15) {
+        endpoints.push('/api/tasks/documents/m15-in');
+        endpoints.push('/api/tasks/documents/m15-out');
+    }
 
     if (endpoints.length === 0) {
         status.textContent = 'Выберите хотя бы один тип документа';
@@ -1244,7 +1246,7 @@ function generateDocForm() {
 
     const body = JSON.stringify({
         guid,
-        profile_name: savedProfileName,
+        profileName: savedProfileName,
         fields: Object.keys(fields).length > 0 ? fields : undefined,
     });
 
@@ -1311,8 +1313,8 @@ function initSwipeTabs() {
 }
 
 function downloadDocuments(guid) {
-    const body = JSON.stringify({guid, profile_name: savedProfileName});
-    const endpoints = ['/api/tasks/documents/act', '/api/tasks/documents/fn', '/api/tasks/documents/m15'];
+    const body = JSON.stringify({guid, profileName: savedProfileName});
+    const endpoints = ['/api/tasks/documents/act', '/api/tasks/documents/fn', '/api/tasks/documents/m15-in', '/api/tasks/documents/m15-out'];
     const fetches = endpoints.map(url =>
         fetch(url, {method: 'POST', headers: {'Content-Type': 'application/json'}, body})
             .then(checkAuth)

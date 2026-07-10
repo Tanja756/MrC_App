@@ -36,6 +36,9 @@ def get_default_config():
         'sync_interval_minutes': '10',
         'fias_normalize': 'false',
         'theme': 'light',
+        'default_warehouse': '',
+        'profile_name': '',
+        'export_xls': 'false',
     }
     return cfg
 
