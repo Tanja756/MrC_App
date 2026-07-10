@@ -107,7 +107,7 @@ def _make_replacements(task_data, profile_name='', extra=None):
         for i in range(4): r[f'{{S{i}}}'] = '_'
     if extra:
         for k, v in extra.items():
-            if k != 'items':
+            if k != 'items' and not k.startswith('_'):
                 r[f'{{{k.upper()}}}'] = str(v)
     addr_text = task_data.get('addr') or task_data.get('address', '')
     r['{ADDR}'] = f"{shop}, {addr_text}" if shop and addr_text else shop or addr_text
@@ -125,6 +125,8 @@ def _doc_filename(suffix, task_data):
     sap = task_data.get('sap', '')
     shop = task_data.get('shop', '')
     code = task_data.get('code', '')
+    batch = task_data.get('_batch', '')
+    suffix = f'{batch}_{suffix}' if batch else suffix
     parts = [p for p in [ts, sap, shop, code, suffix] if p]
     return '-'.join(parts) + '.ods'
 
@@ -180,8 +182,10 @@ def _build_m15_replacements(data):
     task = data.get('task', {})
     profile_name = data.get('profileName') or data.get('profile_name', '')
     extra = data.get('fields', {})
+    batch = data.get('_batch', '')
     task_data = _extract_data_from_text(task, profile_name)
     task_data.update(extra)
+    task_data['_batch'] = batch
     replacements = _make_replacements(task_data, profile_name, extra)
     items = extra.get('items', [])
     _fill_item_rows(replacements, items, 10)

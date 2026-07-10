@@ -27,6 +27,7 @@ def create_app():
     from routes.fn import fn_bp
     from routes.route import route_bp
     from routes.settings import settings_bp
+    from routes.shop import shop_bp
     from routes.pages import pages_bp
     from routes.misc import misc_bp
 
@@ -38,6 +39,7 @@ def create_app():
     app.register_blueprint(fn_bp)
     app.register_blueprint(route_bp)
     app.register_blueprint(settings_bp)
+    app.register_blueprint(shop_bp)
 
     @app.route('/api/sync/from-yandex', methods=['POST'])
     def api_sync_from_yandex():

@@ -1227,15 +1227,33 @@ function generateDocForm() {
     footer.querySelectorAll('button').forEach(b => b.disabled = true);
     status.textContent = 'Запрос на генерацию...';
 
-    const endpoints = [];
-    if (includeAct) endpoints.push('/api/tasks/documents/act');
-    if (includeFn) endpoints.push('/api/tasks/documents/fn');
+    const entries = [];
+    const baseFields = Object.keys(fields).length > 0 ? fields : undefined;
+
+    if (includeAct) {
+        entries.push({url: '/api/tasks/documents/act', body: JSON.stringify({guid, profileName: savedProfileName, fields: baseFields})});
+    }
+    if (includeFn) {
+        entries.push({url: '/api/tasks/documents/fn', body: JSON.stringify({guid, profileName: savedProfileName, fields: baseFields})});
+    }
     if (includeM15) {
-        endpoints.push('/api/tasks/documents/m15-in');
-        endpoints.push('/api/tasks/documents/m15-out');
+        const chunkSize = 10;
+        const allItems = fields.items || [];
+        const batchCount = Math.max(1, Math.ceil(allItems.length / chunkSize));
+        for (let b = 0; b < batchCount; b++) {
+            const batchFields = {...baseFields, items: allItems.slice(b * chunkSize, (b + 1) * chunkSize)};
+            const batchBody = JSON.stringify({
+                guid,
+                profileName: savedProfileName,
+                fields: batchFields,
+                _batch: batchCount > 1 ? `${b + 1}-${batchCount}` : '',
+            });
+            entries.push({url: '/api/tasks/documents/m15-in', body: batchBody});
+            entries.push({url: '/api/tasks/documents/m15-out', body: batchBody});
+        }
     }
 
-    if (endpoints.length === 0) {
+    if (entries.length === 0) {
         status.textContent = 'Выберите хотя бы один тип документа';
         setTimeout(() => {
             loading.classList.add('d-none');
@@ -1244,15 +1262,9 @@ function generateDocForm() {
         return;
     }
 
-    const body = JSON.stringify({
-        guid,
-        profileName: savedProfileName,
-        fields: Object.keys(fields).length > 0 ? fields : undefined,
-    });
-
     status.textContent = 'Генерация документов...';
 
-    const fetches = endpoints.map(url =>
+    const fetches = entries.map(({url, body}) =>
         fetch(url, {method: 'POST', headers: {'Content-Type': 'application/json'}, body})
             .then(checkAuth)
             .then(r => {
@@ -1274,7 +1286,13 @@ function generateDocForm() {
             const code = document.getElementById('docCode').value;
             const items = docSelectedItems.map(i => i.name + ' (' + i.series + ')').join('\n');
             const header = `Перемещение оборудования на/с магазин(а) ${shop} - ${sap} - ${code}:`;
-            setTimeout(() => showM15EquipmentModal(header + '\n' + items), 300);
+            const text = header + '\n' + items;
+            fetch('/api/tasks/' + guid + '/m15-text', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({text}),
+            }).catch(() => {});
+            setTimeout(() => showM15EquipmentModal(text), 300);
         }
     }).catch(e => {
         loading.classList.add('d-none');

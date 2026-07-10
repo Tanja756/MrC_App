@@ -9,7 +9,7 @@ CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.i
 
 def load_config():
     cfg = configparser.ConfigParser()
-    cfg.read(CONFIG_FILE)
+    cfg.read(CONFIG_FILE, encoding='utf-8')
     return cfg
 
 

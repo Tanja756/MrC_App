@@ -158,9 +158,20 @@ def api_task_m15_items(guid):
     return jsonify({'items': [], 'text': ''})
 
 
-@tasks_bp.route('/<guid>/m15-text')
+@tasks_bp.route('/<guid>/m15-text', methods=['GET', 'POST'])
 def api_task_m15_text(guid):
-    return jsonify({'text': '', 'request_code': '', 'hk_code': ''})
+    if request.method == 'POST':
+        data = request.json or {}
+        equipment_text = data.get('text', '')
+        if equipment_text:
+            from db import save_task_equipment
+            save_task_equipment(guid, equipment_text)
+            return jsonify({'ok': True})
+        return jsonify({'error': 'text required'}), 400
+    from db import get_task_equipment
+    text = get_task_equipment(guid)
+    hk = request.args.get('hk', '')
+    return jsonify({'text': text or '', 'request_code': '', 'hk_code': hk})
 
 
 @tasks_bp.route('/documents')

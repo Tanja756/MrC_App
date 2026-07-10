@@ -193,6 +193,15 @@ def init_db():
     """)
 
     c.execute("""
+        CREATE TABLE IF NOT EXISTS task_equipment (
+            guid TEXT PRIMARY KEY,
+            equipment_text TEXT NOT NULL,
+            created_at TEXT DEFAULT (datetime('now', 'localtime')),
+            updated_at TEXT DEFAULT (datetime('now', 'localtime'))
+        )
+    """)
+
+    c.execute("""
         CREATE TABLE IF NOT EXISTS sync_state (
             key TEXT PRIMARY KEY,
             value TEXT,
@@ -212,6 +221,28 @@ def init_db():
 
     conn.commit()
     conn.close()
+
+
+# === TASK EQUIPMENT ===
+
+def save_task_equipment(guid, equipment_text):
+    conn = get_db_connection()
+    conn.execute("""
+        INSERT INTO task_equipment (guid, equipment_text)
+        VALUES (?, ?)
+        ON CONFLICT(guid) DO UPDATE SET
+            equipment_text=excluded.equipment_text,
+            updated_at=datetime('now','localtime')
+    """, (guid, equipment_text))
+    conn.commit()
+    conn.close()
+
+
+def get_task_equipment(guid):
+    conn = get_db_connection()
+    row = conn.execute("SELECT equipment_text FROM task_equipment WHERE guid = ?", (guid,)).fetchone()
+    conn.close()
+    return row['equipment_text'] if row else None
 
 
 # === SHOPS ===
