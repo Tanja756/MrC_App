@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="row">
-    <div class="col-lg-9">
+    <div class="col-lg-12">
         <ul class="nav nav-pills mb-3" id="taskTabs">
             <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tasks-my">В работе</button></li>
             <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tasks-free">Свободные</button></li>
@@ -57,9 +57,6 @@
                 <div id="tasksClosedList" class="task-list"></div>
             </div>
         </div>
-    </div>
-    <div class="col-lg-3 d-none d-lg-block">
-        <div class="right-sidebar"></div>
     </div>
 </div>
 {% endblock %}

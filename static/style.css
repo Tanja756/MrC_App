@@ -360,7 +360,7 @@ td.fn-status-other {
 /* Responsive */
 @media (max-width: 768px) {
     body { font-size: 0.88rem; }
-    .right-sidebar { display: none !important; }
+
     .filter-header {
         display: flex;
         align-items: center;
@@ -811,31 +811,8 @@ td.fn-status-other {
     #mainContainer { max-width: 80%; padding: 0 16px; }
 }
 
-/* Right sidebar */
-.right-sidebar {
-    position: sticky;
-    top: 1rem;
-    height: calc(100vh - 6rem);
-    display: flex;
-    flex-direction: column;
-    padding-left: 12px;
-    border-left: 1px solid var(--separator);
-}
 
 
-/* Section header in sidebar */
-.sidebar-section-title {
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.4px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    padding-bottom: 5px;
-    margin-bottom: 6px;
-    border-bottom: 1px solid var(--separator);
-    display: flex;
-    align-items: center;
-}
 
 /* PWA install section in settings */
 #installAppSection {
