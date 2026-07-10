@@ -821,33 +821,7 @@ td.fn-status-other {
     padding-left: 12px;
     border-left: 1px solid var(--separator);
 }
-.sidebar-scroll {
-    flex: 0 1 auto;
-    min-height: 0;
-    overflow-y: auto;
-    scrollbar-gutter: stable;
-}
-.sidebar-announcements {
-    flex-shrink: 0;
-    padding-top: 8px;
-    scrollbar-gutter: stable;
-}
-.sidebar-ann-toggle {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    user-select: none;
-}
-.sidebar-ann-toggle:hover {
-    color: var(--text-color);
-}
-.announcements-collapsed {
-    display: none !important;
-}
-.sidebar-scroll::-webkit-scrollbar,
-.sidebar-announcements::-webkit-scrollbar { width: 4px; }
-.sidebar-scroll::-webkit-scrollbar-thumb,
-.sidebar-announcements::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 2px; }
+
 
 /* Section header in sidebar */
 .sidebar-section-title {
